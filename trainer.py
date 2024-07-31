@@ -24,6 +24,10 @@ def parse_args():
         default=25,
         help="The number of epochs to train for.",
     )
+    parser.add_argument(
+        "--debug",
+        type=bool,
+        help="Whether to run the model in debug mode.")
 
     return vars(parser.parse_args())
 
@@ -42,7 +46,11 @@ elif args["dataset"] == "cifar10":
 data_module.prepare_data()
 data_module.setup()
 model = VAE()
-trainer = L.Trainer(max_epochs=args["epochs"])
+
+if args["debug"] == True:
+    trainer = L.Trainer(fast_dev_run=True)
+else:
+    trainer = L.Trainer(max_epochs=args["epochs"])
 trainer.fit(model, data_module)
 
 data_loader = data_module.val_dataloader()
