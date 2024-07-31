@@ -2,6 +2,7 @@ import random
 import torch
 from torchvision.utils import make_grid
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def generate_wrong_label_images(model, dataloader, num_images=25):
@@ -18,17 +19,35 @@ def generate_wrong_label_images(model, dataloader, num_images=25):
                 break
 
     original, reconstructed = zip(*images[:num_images])
+
+    original = list(original)
+    reconstructed = list(reconstructed)
+
     original_grid = make_grid(original, nrow=5)
     reconstructed_grid = make_grid(reconstructed, nrow=5)
     return torch.cat([original_grid, reconstructed_grid], dim=1)
 
 
 def plt_result(label, result):
-    fig, ax = plt.subplots(2, 1, figsize=(15, 30))
+    fig, ax = plt.subplots(figsize=(10, 10))
 
-    ax.imshow(result.permute(1, 2, 0))
-    ax.set_title(f"{label} - Original vs Reconstructed")
+    # Check if result is a PyTorch tensor
+    if isinstance(result, torch.Tensor):
+        # Convert PyTorch tensor to NumPy array
+        result = result.cpu().numpy()
+
+    # Ensure the result is in the correct format for imshow
+    if result.shape[0] == 3:  # If channels are in the first dimension
+        result = np.transpose(result, (1, 2, 0))
+
+    # Normalize the image if it's not in the range [0, 1]
+    if result.max() > 1.0:
+        result = result / 255.0
+
+    ax.imshow(result)
+    ax.set_title(f"{label}: Original (top) vs Reconstructed with Wrong Labels (bottom)")
     ax.axis("off")
 
     plt.tight_layout()
-    plt.savefig(f"{label}.png")
+    plt.savefig(f"{label}_vae_results.png")
+    plt.close()
