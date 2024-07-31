@@ -27,6 +27,7 @@ def parse_args():
     parser.add_argument(
         "--debug",
         type=bool,
+        default=False,
         help="Whether to run the model in debug mode.")
 
     return vars(parser.parse_args())
@@ -47,7 +48,7 @@ data_module.prepare_data()
 data_module.setup()
 model = VAE()
 
-if args["debug"] == True:
+if args["debug"]:
     trainer = L.Trainer(fast_dev_run=True)
 else:
     trainer = L.Trainer(max_epochs=args["epochs"])
