@@ -52,7 +52,7 @@ if args["debug"]:
     trainer = L.Trainer(fast_dev_run=True)
 else:
     trainer = L.Trainer(max_epochs=args["epochs"])
-trainer.fit(model, data_module)
+trainer.fit(model, datamodule=data_module)
 
 data_loader = data_module.val_dataloader()
 
