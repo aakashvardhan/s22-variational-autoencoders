@@ -3,9 +3,9 @@ from argparse import ArgumentParser
 
 import lightning as L
 import torch
-from pl_bolts.datamodules import CIFAR10DataModule
+# from pl_bolts.datamodules import CIFAR10DataModule
 
-from datamodule import MNISTDataModule
+from datamodule import MNISTDataModule, CIFAR10DataModule
 from lit_vae import VAE
 from utils import generate_wrong_label_images
 
