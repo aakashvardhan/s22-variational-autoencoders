@@ -19,11 +19,24 @@ def generate_prediction(model: torch.nn.Module, img: torch.Tensor, wrong_label: 
     """Generate a prediction using the model."""
     input_img = img.unsqueeze(0), torch.tensor([wrong_label]).to(img.device)
     with torch.no_grad():
-        return model(input_img)[0]
+        pred = model(input_img)[0]
+    return pred.squeeze(0)  # Remove batch dimension
 
 def plot_image(ax: plt.Axes, img: np.ndarray, title: str):
     """Plot a single image."""
-    ax.imshow(np.transpose(img, (1, 2, 0)))
+    if img.ndim == 3 and img.shape[0] in [1, 3]:  # If image is (C, H, W)
+        img = np.transpose(img, (1, 2, 0))
+    elif img.ndim == 2:  # If image is already (H, W)
+        pass
+    else:
+        raise ValueError(f"Unexpected image shape: {img.shape}")
+    
+    if img.shape[-1] == 1:  # If it's a grayscale image
+        img = img.squeeze()
+        ax.imshow(img, cmap='gray')
+    else:
+        ax.imshow(img)
+    
     ax.set_title(title)
     ax.axis('off')
 
@@ -53,6 +66,7 @@ def generate_wrong_label_images(
         wrong_label = get_wrong_label(label)
 
         pred_img = generate_prediction(model, img, wrong_label)
+        print(f"pred_img shape: {pred_img.shape}")  # Debug print
         title = get_label_text(label, wrong_label, is_mnist)
         
         plot_image(axes[i], pred_img.cpu().numpy(), title)
@@ -60,7 +74,6 @@ def generate_wrong_label_images(
     plt.tight_layout()
     plt.savefig("wrong_label_images.png")
     print("Saved wrong label images to wrong_label_images.png")
-
 # # Usage
 # if __name__ == "__main__":
 #     # Assuming you have your model and dataloader ready
