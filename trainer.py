@@ -56,6 +56,7 @@ trainer.fit(model, data_module)
 
 data_loader = data_module.val_dataloader()
 
-result = generate_wrong_label_images(model, data_loader)
-
-plt_result(label=args["dataset"], result=result)
+if args["dataset"] == "mnist":
+    generate_wrong_label_images(model, data_loader, is_mnist=True)
+elif args["dataset"] == "cifar10":
+    generate_wrong_label_images(model, data_loader, is_mnist=False)

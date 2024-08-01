@@ -1,53 +1,68 @@
-import random
 import torch
-from torchvision.utils import make_grid
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from typing import List, Tuple
 
+CIFAR10_CLASSES = [
+    "airplane", "automobile", "bird", "cat", "deer",
+    "dog", "frog", "horse", "ship", "truck"
+]
 
-def generate_wrong_label_images(model, dataloader, num_images=25):
-    model.eval()
-    images = []
+def get_wrong_label(correct_label: int, num_classes: int = 10) -> int:
+    """Generate a random wrong label."""
+    wrong_label = torch.randint(0, num_classes, (1,))[0].item()
+    while wrong_label == correct_label:
+        wrong_label = torch.randint(0, num_classes, (1,))[0].item()
+    return wrong_label
+
+def generate_prediction(model: torch.nn.Module, img: torch.Tensor, wrong_label: int) -> torch.Tensor:
+    """Generate a prediction using the model."""
+    input_img = img.unsqueeze(0), torch.tensor([wrong_label]).to(img.device)
     with torch.no_grad():
-        for batch in dataloader:
-            x, y = batch
-            wrong_labels = torch.randint(0, 10, (x.size(0),))
-            wrong_labels = (wrong_labels + y) % 10  # Ensure labels are different
-            x_hat, _, _, _, _ = model((x, wrong_labels))
-            images.extend(list(zip(x, x_hat)))
-            if len(images) >= num_images:
-                break
+        return model(input_img)[0]
 
-    original, reconstructed = zip(*images[:num_images])
+def plot_image(ax: plt.Axes, img: np.ndarray, title: str):
+    """Plot a single image."""
+    ax.imshow(np.transpose(img, (1, 2, 0)))
+    ax.set_title(title)
+    ax.axis('off')
 
-    original = list(original)
-    reconstructed = list(reconstructed)
+def get_label_text(label: int, wrong_label: int, is_mnist: bool) -> str:
+    """Get the label text for the plot title."""
+    if is_mnist:
+        return f"Label: {label} Pred: {wrong_label}"
+    return f"Label: {CIFAR10_CLASSES[label]} Pred: {CIFAR10_CLASSES[wrong_label]}"
 
-    original_grid = make_grid(original, nrow=5)
-    reconstructed_grid = make_grid(reconstructed, nrow=5)
-    return torch.cat([original_grid, reconstructed_grid], dim=1)
+def generate_wrong_label_images(
+    model: torch.nn.Module,
+    dataloader: torch.utils.data.DataLoader,
+    is_mnist: bool,
+    num_images: int = 25
+) -> None:
+    """Generate and save images with wrong labels."""
+    model.eval()
+    images, labels = next(iter(dataloader))
+    images, labels = images.to("cpu"), labels.to("cpu")
 
+    fig, axes = plt.subplots(5, 5, figsize=(20, 20))
+    axes = axes.flatten()
 
-def plt_result(label, result):
-    fig, ax = plt.subplots(figsize=(10, 10))
+    for i in range(num_images):
+        img = images[i]
+        label = labels[i].item()
+        wrong_label = get_wrong_label(label)
 
-    # Check if result is a PyTorch tensor
-    if isinstance(result, torch.Tensor):
-        # Convert PyTorch tensor to NumPy array
-        result = result.cpu().numpy()
-
-    # Ensure the result is in the correct format for imshow
-    if result.shape[0] == 3:  # If channels are in the first dimension
-        result = np.transpose(result, (1, 2, 0))
-
-    # Normalize the image if it's not in the range [0, 1]
-    if result.max() > 1.0:
-        result = result / 255.0
-
-    ax.imshow(result)
-    ax.set_title(f"{label}: Original (top) vs Reconstructed with Wrong Labels (bottom)")
-    ax.axis("off")
+        pred_img = generate_prediction(model, img, wrong_label)
+        title = get_label_text(label, wrong_label, is_mnist)
+        
+        plot_image(axes[i], pred_img.cpu().numpy(), title)
 
     plt.tight_layout()
-    plt.savefig(f"{label}_vae_results.png")
-    plt.close()
+    plt.savefig("wrong_label_images.png")
+    print("Saved wrong label images to wrong_label_images.png")
+
+# # Usage
+# if __name__ == "__main__":
+#     # Assuming you have your model and dataloader ready
+#     # generate_wrong_label_images(model, dataloader, is_mnist=True)  # For MNIST
+#     # generate_wrong_label_images(model, dataloader, is_mnist=False)  # For CIFAR10
