@@ -34,6 +34,8 @@ class VAE(L.LightningModule):
     def forward(self, x):
         x, y = x
         # x = x.to(self.device)
+        x = x.to(self.device)
+        y = y.to(self.device)
 
         x_encode = self.encoder(x)
         # print(f"Input shape: {x.shape}")  # Debug print
