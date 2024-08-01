@@ -66,7 +66,7 @@ def generate_wrong_label_images(
         wrong_label = get_wrong_label(label)
 
         pred_img = generate_prediction(model, img, wrong_label)
-        print(f"pred_img shape: {pred_img.shape}")  # Debug print
+        # print(f"pred_img shape: {pred_img.shape}")  # Debug print
         title = get_label_text(label, wrong_label, is_mnist)
         
         plot_image(axes[i], pred_img.cpu().numpy(), title)
